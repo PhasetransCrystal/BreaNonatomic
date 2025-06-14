@@ -154,7 +154,7 @@ public class Operator {
 
     //合并实体信息
     //不安全 请使用下面的合集版本 但是方便
-    public void mergeDataFromEntity(RetreatReason reason, MapCodec<? extends OperatorInfo>... types) {
+    public void mergeDataFromEntity(RetreatReason reason, MapCodec<? extends OperatorInfo<?>>... types) {
         mergeDataFromEntity(reason, Set.of(types));
     }
 
