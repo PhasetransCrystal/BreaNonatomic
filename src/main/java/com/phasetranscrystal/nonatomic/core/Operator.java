@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.NonnullDefault;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 /**
  * <p>干员</p>
@@ -55,10 +55,10 @@ public class Operator {
      * - {@link Operator#opeHandler}就是我们上面提到过的干员管理器。干员所属的玩家与总部署状态表都可以通过该实例获取。在init方法中被加载。<p>
      * - {@link Operator#entity}在需要记录实体的时候，这个变量将被对应的实体填充。在默认情况下，只有跟随状态干员会记录。
      * 请不要随意记录其它状态的干员——除非您明白您在干什么——这可能导致干员在被世界移除后一直被持续引用。<p>
-     * - {@link Operator#entityFinderInfo}记录实体的uuid与最后位置，用于帮助玩家找到实体以及验证实体合法性。<p>
+     * - {@link Operator#entityFinderInfo}记录实体的uuid与最后位置，用于帮助玩家找到实体以及验证实体合法性。
      */
     public final Identifier identifier;
-    public final HashMap<MapCodec<? extends OperatorInfo>, OperatorInfo> infos = new HashMap<>();
+    protected final HashMap<MapCodec<? extends OperatorInfo<?>>, OperatorInfo<?>> infos = new HashMap<>();
 
     @NonnullDefault
     private OpeHandler opeHandler;
@@ -158,22 +158,25 @@ public class Operator {
         mergeDataFromEntity(reason, Set.of(types));
     }
 
-    public void mergeDataFromEntity(RetreatReason reason, Collection<MapCodec<? extends OperatorInfo>> types) {
+    public void mergeDataFromEntity(RetreatReason reason, Collection<MapCodec<? extends OperatorInfo<?>>> types) {
         if (entity == null) return;
         entity.getExternalOpeInfo().stream().filter(i -> types.isEmpty() || types.contains(i.codec())).forEach(info -> {
             switch (EventHooks.allowDataMerge(reason, entity, this, info)) {
-                case 1 -> {
-                    var codec = info.codec();
-                    if (infos.containsKey(codec)) {
-                        infos.get(codec).merge(info);
-                    } else {
-                        infos.put(codec, info);
-                    }
-                    entity.onExternalOpeInfoRemove(info, true);
-                }
+                case 1 -> dataMerge(info);
                 case -1 -> entity.onExternalOpeInfoRemove(info, false);
             }
         });
+    }
+
+    @SuppressWarnings("all")
+    private <T extends OperatorInfo<T>> void dataMerge(OperatorInfo<T> info){
+        MapCodec<T> codec = info.codec();
+        if (infos.containsKey(codec)) {
+            getInfo(info.codec()).merge((T) info);
+        } else {
+            infos.put(codec, info);
+        }
+        entity.onExternalOpeInfoRemove(info, true);
     }
 
     public void disconnectWithEntity() {
@@ -367,17 +370,33 @@ public class Operator {
         entityFinderInfo.ifPresent(info -> info.posRecorder = recorder);
     }
 
-    public boolean addInfo(OperatorInfo info) {
+    public Set<MapCodec<? extends OperatorInfo<?>>> getInfoTypeSet(){
+        return infos.keySet();
+    }
+
+    public <T extends OperatorInfo<T>> @Nullable OperatorInfo<T> getInfo(MapCodec<T> type){
+        return (OperatorInfo<T>) infos.get(type);
+    }
+
+    public <T extends OperatorInfo<T>> @Nullable OperatorInfo<T> getInfoOrDefault(MapCodec<T> type, Supplier<T> defaultValue){
+        return (OperatorInfo<T>) infos.getOrDefault(type, defaultValue.get());
+    }
+
+    public boolean addInfo(OperatorInfo<?> info) {
         if (infos.containsKey(info.codec())) return false;
         infos.put(info.codec(), info);
         return true;
     }
 
-    public boolean removeInfo(OperatorInfo info) {
-        return removeInfo(info.codec());
+    public boolean removeInfo(OperatorInfo<?> info) {
+        if (infos.containsKey(info.codec()) && infos.get(info.codec()) == info) {
+            infos.remove(info.codec());
+            return true;
+        }
+        return false;
     }
 
-    public boolean removeInfo(MapCodec<? extends OperatorInfo> info) {
+    public boolean removeInfo(MapCodec<? extends OperatorInfo<?>> info) {
         if (infos.containsKey(info)) {
             infos.remove(info);
             return true;
@@ -385,7 +404,7 @@ public class Operator {
         return false;
     }
 
-    public boolean containsInfo(MapCodec<? extends OperatorInfo> info) {
+    public boolean containsInfo(MapCodec<? extends OperatorInfo<?>> info) {
         return infos.containsKey(info);
     }
 

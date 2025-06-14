@@ -247,10 +247,10 @@ public abstract class OperatorEvent extends Event {
     public static class MergeData extends OperatorEvent implements ICancellableEvent {
         public final Operator.RetreatReason reason;
         public final OperatorEntity entity;
-        public final OperatorInfo info;
+        public final OperatorInfo<?> info;
         private boolean delete;
 
-        public MergeData(Operator.RetreatReason reason, OperatorEntity entity, Operator operator, OperatorInfo info) {
+        public MergeData(Operator.RetreatReason reason, OperatorEntity entity, Operator operator, OperatorInfo<?> info) {
             super(operator);
             this.reason = reason;
             this.entity = entity;

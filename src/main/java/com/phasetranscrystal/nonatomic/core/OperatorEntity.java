@@ -87,12 +87,12 @@ public class OperatorEntity extends Mob {
     /**
      * 可以覆写此方法，此方法在允许数据合并时被调用。
      */
-    protected Collection<OperatorInfo> getExternalOpeInfo() {
+    protected Collection<OperatorInfo<?>> getExternalOpeInfo() {
         return Collections.emptyList();
     }
 
     protected ListTag saveExternalOpeInfo() {
-        Collection<? extends OperatorInfo> unmergedInfo = getExternalOpeInfo();
+        Collection<? extends OperatorInfo<?>> unmergedInfo = getExternalOpeInfo();
         if (!unmergedInfo.isEmpty()) {
             ListTag unmerged = new ListTag();
             unmergedInfo.forEach(info -> unmerged.add(OperatorInfo.CODEC.encode(info, NbtOps.INSTANCE, new CompoundTag()).getOrThrow()));
@@ -101,11 +101,11 @@ public class OperatorEntity extends Mob {
         return null;
     }
 
-    protected Collection<? extends OperatorInfo> loadExternalOpeInfo(ListTag listTag) {
-        List<OperatorInfo> list = new ArrayList<>();
+    protected Collection<? extends OperatorInfo<?>> loadExternalOpeInfo(ListTag listTag) {
+        List<OperatorInfo<?>> list = new ArrayList<>();
         listTag.forEach(tag -> {
             try {
-                OperatorInfo info = OperatorInfo.CODEC.parse(NbtOps.INSTANCE, tag).getOrThrow();
+                OperatorInfo<?> info = OperatorInfo.CODEC.parse(NbtOps.INSTANCE, tag).getOrThrow();
                 list.add(info);
             } catch (IllegalStateException exception) {
                 LOGGER.warn("Unable to parse operator info for entity(ope = {}). Skipped.", identifier);
@@ -118,7 +118,7 @@ public class OperatorEntity extends Mob {
 
     //实现该方法以正确处理合并时的合并成功或删除要求。
     //不要在不清楚的情况下调用这个
-    protected void onExternalOpeInfoRemove(OperatorInfo info, boolean merged) {
+    protected void onExternalOpeInfoRemove(OperatorInfo<?> info, boolean merged) {
     }
 
     @Override

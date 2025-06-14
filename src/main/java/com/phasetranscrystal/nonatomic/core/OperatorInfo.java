@@ -6,8 +6,8 @@ import com.phasetranscrystal.nonatomic.Registries;
 import com.phasetranscrystal.nonatomic.core.info.IBelongingOperatorProvider;
 import org.lwjgl.system.NonnullDefault;
 
-public abstract class OperatorInfo implements IBelongingOperatorProvider {
-    public static final Codec<OperatorInfo> CODEC = Registries.OPERATOR_INFO.byNameCodec().dispatch(OperatorInfo::codec, i -> i);
+public abstract class OperatorInfo<T extends OperatorInfo<T>> implements IBelongingOperatorProvider {
+    public static final Codec<OperatorInfo<?>> CODEC = Registries.OPERATOR_INFO.byNameCodec().dispatch(OperatorInfo::codec, i -> i);
 
 
     //empty -> 该数据为外部数据  否则为干员持久化数据
@@ -15,7 +15,7 @@ public abstract class OperatorInfo implements IBelongingOperatorProvider {
     public Operator operator;
 
 
-    public abstract MapCodec<? extends OperatorInfo> codec();
+    public abstract MapCodec<T> codec();
 
     /**
      * 标记数据合并。请注意完成合并后将传入信息进行清理。
@@ -23,11 +23,11 @@ public abstract class OperatorInfo implements IBelongingOperatorProvider {
      * @param newData 实体保有的数据，用于和此数据合并
      * @return 是否成功合并
      */
-    public abstract <T extends OperatorInfo> boolean merge(final T newData);
+    public abstract boolean merge(final T newData);
 
-    public abstract <T extends OperatorInfo> T createExternal();
+    public abstract T createExternal();
 
-    public abstract <T extends OperatorInfo> T copy();
+    public abstract T copy();
 
     public void login() {
     }
